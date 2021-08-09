@@ -13,9 +13,11 @@ if (!empty($_POST)) {
     if (isset($_POST['email'], $_POST['password']) && !empty($_POST['email']) && !empty($_POST['password'])) {
 
         $email = strip_tags($_POST['email']);
+        $_SESSION["error"] = [];
+
         //validation email
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { //est ce que $_POST['email'] ou $email ne contient pas d'email
-            die("L'adresse email est incorrect");
+            $_SESSION["error"][] = "L'adresse email est incorrect";
         }
 
         // On se connecte à la db
@@ -32,14 +34,19 @@ if (!empty($_POST)) {
         $user = $query->fetch();
 
         if (!$user) {
-            die("L'email et/ou le mot de passe est incorrect");
+            echo "$user n'existe pas";
+
+            $_SESSION["error"][] = "L'email et/ou le mot de passe est incorrect";
         }
 
         // Ici on a un user existant, on peut donc verifier le mot de passe
-        if (password_verify($_POST['password'], $user['pass'])) {
+        if (!password_verify($_POST['password'], $user['pass'])) {
+            $_SESSION["error"][] = "L'email et/ou le mot de passe est incorrect";
+        }
 
-            // Ici l'utilisateur existe et le mot de passe est correct
-            // On va donc l'enregistrer dans la session (connecter l'utilisateur)
+        // Ici l'utilisateur existe et le mot de passe est correct
+        // On va donc l'enregistrer dans la session (connecter l'utilisateur)
+        if ($_SESSION["error"] === []) {
 
             // On stocke dans la session les infos de l'utilisateur
             $_SESSION['user'] = [
@@ -69,6 +76,15 @@ include_once "../includes/navbar.php";
 ?>
 
 <h1>Connexion</h1>
+
+<?php
+if (isset($_SESSION["error"])) {
+    foreach ($_SESSION["error"] as $message) {
+        echo "<div class=\"alert alert-danger\">$message</div>";
+    }
+    unset($_SESSION["error"]);
+}
+?>
 
 <form action="#" method="post">
     <div>
